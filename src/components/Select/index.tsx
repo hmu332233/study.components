@@ -18,18 +18,34 @@
   </Select>
 */
 
-import React, { useState, useEffect } from 'react';
-import { SelectProvider, useSelectContext } from './context';
+import React, { useState, useEffect, useMemo } from 'react';
+import { SelectContext, useSelectContext } from './context';
 
 type Props = {
   children: React.ReactNode
 };
 
 function Select({ children }: Props) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState('');
+
+  const handleFocus = () => {
+    setOpen(!!selected);
+  };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setOpen(false);
+    }
+  };
+
+  const value = useMemo(() => ({ open, setOpen: (v: boolean) => setOpen(v), selected, setSelected: (v: string) => setSelected(v) }), [open, setOpen, selected, setSelected]);
   return (
-    <SelectProvider>
-      {children}
-    </SelectProvider>
+    <SelectContext.Provider value={value}>
+      <div tabIndex={0} onFocus={handleFocus} onBlur={handleBlur}>
+        {children}
+      </div>
+    </SelectContext.Provider>
   );
 }
 
@@ -49,7 +65,7 @@ function Input({ onChange, displayValue }: { onChange: (v: string) => void, disp
   }, [selected]);
 
   return (
-    <input value={value} onChange={handleChange} />
+    <input role="combobox" value={value} onChange={handleChange} />
   );
 }
 
@@ -67,16 +83,18 @@ function Options({ children }: { children: React.ReactNode }) {
   );
 };
 
-function Option({ children, value }: { children: React.ReactNode, value: string }) {
+function Option({ children, value }: { children: React.ReactNode, value: any }) {
   const { selected, setSelected, setOpen } = useSelectContext();
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setSelected(value);
     setOpen(false);
   }
 
   return (
-    <li role="option" onClick={handleClick}>
+    <li role="option" onMouseDown={handleClick} id={`combobox-item-${value.id}`}>
       {children}
       {selected === value && 'selected'}
     </li>
