@@ -19,33 +19,17 @@
 */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { SelectContext, useSelectContext } from './context';
+import { SelectProvider, useSelectContext } from './context';
 
 type Props = {
   children: React.ReactNode
 };
 
 function Select({ children }: Props) {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState('');
-
-  const handleFocus = () => {
-    setOpen(!!selected);
-  };
-
-  const handleBlur = (e: React.FocusEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget)) {
-      setOpen(false);
-    }
-  };
-
-  const value = useMemo(() => ({ open, setOpen: (v: boolean) => setOpen(v), selected, setSelected: (v: string) => setSelected(v) }), [open, setOpen, selected, setSelected]);
   return (
-    <SelectContext.Provider value={value}>
-      <div tabIndex={0} onFocus={handleFocus} onBlur={handleBlur}>
-        {children}
-      </div>
-    </SelectContext.Provider>
+    <SelectProvider>
+      {children}
+    </SelectProvider>
   );
 }
 
@@ -60,12 +44,20 @@ function Input({ onChange, displayValue }: { onChange: (v: string) => void, disp
     setOpen(value.length >= 1);
   };
 
+  const handleFocus = () => {
+    setOpen(value.length >= 1);
+  };
+
+  const handleBlur = () => {
+    setOpen(false);
+  };
+
   useEffect(() => {
     setValue(displayValue ? displayValue(selected) : selected);
   }, [selected]);
 
   return (
-    <input role="combobox" value={value} onChange={handleChange} />
+    <input role="combobox" onFocus={handleFocus} onBlur={handleBlur} value={value} onChange={handleChange} />
   );
 }
 
